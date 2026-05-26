@@ -52,10 +52,10 @@ kc() {
 # 1. Realm
 if curl -fsS -o /dev/null "${AUTH[@]}" "$KEYCLOAK_URL/admin/realms/$REALM" 2>/dev/null; then
   echo "Realm $REALM exists — updating"
-  kc PUT "/realms/$REALM" '{"enabled":true,"registrationAllowed":false,"loginWithEmailAllowed":true,"resetPasswordAllowed":true,"sslRequired":"none"}' >/dev/null
+  kc PUT "/realms/$REALM" '{"enabled":true,"registrationAllowed":false,"loginWithEmailAllowed":true,"resetPasswordAllowed":true,"verifyEmail":false,"sslRequired":"none"}' >/dev/null
 else
   echo "Creating realm $REALM"
-  kc POST "/realms" "{\"realm\":\"$REALM\",\"enabled\":true,\"displayName\":\"Sam Shop\",\"registrationAllowed\":false,\"loginWithEmailAllowed\":true,\"duplicateEmailsAllowed\":false,\"resetPasswordAllowed\":true,\"editUsernameAllowed\":false,\"sslRequired\":\"none\"}" >/dev/null
+  kc POST "/realms" "{\"realm\":\"$REALM\",\"enabled\":true,\"displayName\":\"Sam Shop\",\"registrationAllowed\":false,\"loginWithEmailAllowed\":true,\"duplicateEmailsAllowed\":false,\"resetPasswordAllowed\":true,\"verifyEmail\":false,\"editUsernameAllowed\":false,\"sslRequired\":\"none\"}" >/dev/null
 fi
 
 # 2. Roles
@@ -90,21 +90,27 @@ if ! echo "$MAPPERS" | python3 -c "import sys,json; print(any(m.get('name')=='us
 fi
 
 # 5. Users: username|email|userId|role|password
+clear_required_actions() {
+  local user_id=$1
+  kc PUT "/realms/$REALM/users/$user_id" '{"requiredActions":[]}' >/dev/null
+}
+
 setup_user() {
   local username=$1 email=$2 uid=$3 role=$4 password=$5
   local users user_id role_json
   users=$(kc GET "/realms/$REALM/users?username=${username}&exact=true")
   user_id=$(echo "$users" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['id'] if d else '')")
   if [ -z "$user_id" ]; then
-    kc POST "/realms/$REALM/users" "{\"username\":\"$username\",\"email\":\"$email\",\"enabled\":true,\"emailVerified\":true,\"attributes\":{\"userId\":[\"$uid\"]}}" >/dev/null
+    kc POST "/realms/$REALM/users" "{\"username\":\"$username\",\"email\":\"$email\",\"enabled\":true,\"emailVerified\":true,\"requiredActions\":[],\"attributes\":{\"userId\":[\"$uid\"]}}" >/dev/null
     users=$(kc GET "/realms/$REALM/users?username=${username}&exact=true")
     user_id=$(echo "$users" | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
     echo "Created user $username"
   else
-    kc PUT "/realms/$REALM/users/$user_id" "{\"email\":\"$email\",\"enabled\":true,\"attributes\":{\"userId\":[\"$uid\"]}}" >/dev/null
+    kc PUT "/realms/$REALM/users/$user_id" "{\"email\":\"$email\",\"enabled\":true,\"emailVerified\":true,\"requiredActions\":[],\"attributes\":{\"userId\":[\"$uid\"]}}" >/dev/null
     echo "Updated user $username"
   fi
   kc PUT "/realms/$REALM/users/$user_id/reset-password" "{\"type\":\"password\",\"value\":\"$password\",\"temporary\":false}" >/dev/null
+  clear_required_actions "$user_id"
   role_json=$(kc GET "/realms/$REALM/roles/$role")
   kc POST "/realms/$REALM/users/$user_id/role-mappings/realm" "[$role_json]" >/dev/null
   echo "  Assigned role $role"
@@ -119,11 +125,19 @@ echo "=== Keycloak sam-shop configured ==="
 echo "App: $FE_URL"
 echo "Login: customer1 / 123456"
 
-TEST=$(curl -fsS -X POST "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token" \
+echo "Verifying login token..."
+TOKEN_RESP=$(curl -sS -w "\n%{http_code}" -X POST "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=sam-shop-ui&username=customer1&password=123456&grant_type=password")
+HTTP_CODE=$(echo "$TOKEN_RESP" | tail -n1)
+BODY=$(echo "$TOKEN_RESP" | sed '$d')
+if [ "$HTTP_CODE" != "200" ]; then
+  echo "WARNING: token test failed (HTTP $HTTP_CODE): $BODY"
+  echo "Try: bash identity-service/keycloak/fix-keycloak-users.sh"
+  exit 0
+fi
 echo "Sample JWT payload:"
-echo "$TEST" | python3 -c "
+echo "$BODY" | python3 -c "
 import sys, json, base64
 t = json.load(sys.stdin)['access_token']
 p = t.split('.')[1]
