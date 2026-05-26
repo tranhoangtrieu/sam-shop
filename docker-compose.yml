@@ -173,8 +173,12 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      # Public issuer for browser tokens (http://PUBLIC_HOST:8180)
       KC_HOSTNAME: ${PUBLIC_HOST:-${KC_HOSTNAME:-localhost}}
       KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8180}
+      # Admin API / script setup via localhost on VM (avoids "HTTPS required" from external HTTP)
+      KC_HOSTNAME_ADMIN: localhost
+      KC_HOSTNAME_ADMIN_URL: http://localhost:${KEYCLOAK_PORT:-8180}
       KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT:-false}
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"

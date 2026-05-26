@@ -37,7 +37,23 @@ Các port khác (8081–8088, 8761, 5433–5438) **không cần** mở ra Intern
 5. **Networking:** tạo NSG, gán **Public IP**.
 6. Sau khi tạo, ghi lại **Public IP** — dùng làm `PUBLIC_HOST` (ví dụ VM hiện tại: `20.24.185.233`).
 
-### NSG — Inbound rules
+### NSG — Inbound rules (bắt buộc — nếu thiếu sẽ timeout từ trình duyệt)
+
+**Triệu chứng:** `docker compose ps` mọi thứ `Up` nhưng mở http://IP:4200 **không load / timeout**.
+
+**Cách mở (Azure Portal):**
+
+1. VM `shop-sam` → **Networking** (hoặc **Settings → Networking**).
+2. Chọn **Network security group** (tên NSG gắn với NIC).
+3. **Settings → Inbound security rules** → **Add**.
+4. Thêm **2 rule** (hoặc sửa rule có sẵn):
+
+| Name | Priority | Source | Destination | Service | Port | Action |
+|------|----------|--------|-------------|---------|------|--------|
+| Allow-HTTP-4200 | 1010 | Any | Any | Custom | **4200** | Allow |
+| Allow-Keycloak-8180 | 1020 | Any | Any | Custom | **8180** | Allow |
+
+5. **Save** — đợi vài giây, thử lại trình duyệt (dùng **http** không phải https).
 
 | Priority | Port | Mục đích |
 |----------|------|----------|
@@ -138,15 +154,30 @@ Lần đầu build có thể mất **15–30 phút** (nhiều image Java + npm).
 
 ## 7. Cấu hình Keycloak realm (bắt buộc lần đầu)
 
-Chạy từ **máy có PowerShell** (Windows) hoặc VM nếu cài `pwsh`:
+Gọi Admin API qua `http://<IP-công-khai>:8180` từ Windows có thể lỗi **`HTTPS required`**. Dùng **Cách A** hoặc **Cách B**.
+
+### Cách A — Trên VM qua localhost (khuyến nghị)
+
+```bash
+cd ~/sam-shop-microservices
+export KC_ADMIN_PASSWORD='<mật_khẩu_trong_.env>'
+export FE_PUBLIC_URL='http://20.24.185.233:4200'
+
+chmod +x scripts/configure-keycloak-azure.sh
+./scripts/configure-keycloak-azure.sh
+```
+
+### Cách B — SSH tunnel từ Windows
+
+PowerShell **1** (giữ mở): `ssh -L 8180:127.0.0.1:8180 azureuser@20.24.185.233`
+
+PowerShell **2**:
 
 ```powershell
-$env:KEYCLOAK_URL = "http://20.12.34.56:8180"
-$env:FE_PUBLIC_URL = "http://20.12.34.56:4200"
-$env:KC_ADMIN_USERNAME = "admin"
+$env:KEYCLOAK_URL = "http://localhost:8180"
+$env:FE_PUBLIC_URL = "http://20.24.185.233:4200"
 $env:KC_ADMIN_PASSWORD = "<mật_khẩu_trong_.env>"
-
-powershell -ExecutionPolicy Bypass -File identity-service/keycloak/configure-sam-shop.ps1
+powershell -ExecutionPolicy Bypass -File identity-service\keycloak\configure-sam-shop.ps1
 ```
 
 Script tạo realm `sam-shop`, client `sam-shop-ui`, mapper `userId`, user mẫu `customer1` / `staff1` / `admin1` (mật khẩu `123456`).
