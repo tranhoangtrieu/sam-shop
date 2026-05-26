@@ -1,0 +1,15 @@
+<aside class="sidebar">
+  <h3>Quản trị</h3>
+  <nav>
+    @if (isAdmin()) {
+      <a routerLink="/admin/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/admin/users" routerLinkActive="active">Quản lý user</a>
+    }
+    @if (isStaff()) {
+      <a routerLink="/admin/products" routerLinkActive="active">Sản phẩm</a>
+      <a routerLink="/admin/orders" routerLinkActive="active">Đơn hàng</a>
+      <a routerLink="/admin/chat" routerLinkActive="active">Chat hỗ trợ</a>
+    }
+    <a routerLink="/">← Về cửa hàng</a>
+  </nav>
+</aside>

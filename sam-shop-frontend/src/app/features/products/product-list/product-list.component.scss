@@ -1,0 +1,28 @@
+.page h1 { color: #2e7d32; margin-bottom: 1rem; }
+.toolbar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.toolbar input { flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 8px; }
+.toolbar button { padding: 0.5rem 1rem; background: #2e7d32; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+.msg { background: #e8f5e9; padding: 0.5rem 1rem; border-radius: 8px; color: #2e7d32; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.5rem; }
+.card {
+  background: #fff; border-radius: 12px; padding: 1rem; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  display: flex; flex-direction: column;
+}
+.img {
+  height: 160px;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f4f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.img img { width: 100%; height: 100%; object-fit: cover; }
+.img .placeholder { font-size: 2.5rem; }
+.card h3 { margin: 0; font-size: 1rem; }
+.card h3 a { color: #1b5e20; text-decoration: none; }
+.desc { font-size: 0.85rem; color: #666; flex: 1; }
+.price { font-weight: 700; color: #2e7d32; margin: 0.5rem 0; }
+.stock { font-size: 0.8rem; color: #888; }
+.btn { margin-top: auto; padding: 0.5rem; background: #43a047; color: #fff; border: none; border-radius: 8px; cursor: pointer; }

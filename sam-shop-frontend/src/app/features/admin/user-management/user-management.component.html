@@ -1,0 +1,80 @@
+<div class="page">
+  <h1>Quản lý người dùng</h1>
+  <p class="hint">
+    Tạo tài khoản và gán quyền trực tiếp trên ứng dụng (Keycloak được cập nhật qua API, không cần mở Admin Console).
+  </p>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+  @if (success) {
+    <p class="success">{{ success }}</p>
+  }
+
+  <section class="card">
+    <h2>Tạo tài khoản mới</h2>
+    <form [formGroup]="form" (ngSubmit)="createUser()">
+      <div class="row">
+        <label>
+          Tên đăng nhập
+          <input formControlName="username" autocomplete="off" />
+        </label>
+        <label>
+          Mật khẩu
+          <input type="password" formControlName="password" autocomplete="new-password" />
+        </label>
+      </div>
+      <div class="row">
+        <label>
+          Email
+          <input type="email" formControlName="email" />
+        </label>
+        <label>
+          Số điện thoại
+          <input formControlName="phone" />
+        </label>
+      </div>
+      <label>
+        Vai trò
+        <select formControlName="role">
+          @for (r of roles; track r) {
+            <option [value]="r">{{ r }}</option>
+          }
+        </select>
+      </label>
+      <button type="submit" [disabled]="form.invalid || saving">
+        {{ saving ? 'Đang tạo…' : 'Tạo tài khoản' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Danh sách tài khoản</h2>
+    @if (loading) {
+      <app-loading />
+    } @else if (!users.length) {
+      <p>Chưa có người dùng.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Tên đăng nhập</th>
+            <th>Email</th>
+            <th>Vai trò</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users; track u.username) {
+            <tr>
+              <td>{{ u.id }}</td>
+              <td>{{ u.username }}</td>
+              <td>{{ u.email }}</td>
+              <td><span class="role">{{ u.role }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>

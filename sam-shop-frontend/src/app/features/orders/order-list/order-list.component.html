@@ -1,0 +1,23 @@
+<div class="page">
+  <h1>Đơn hàng của tôi</h1>
+  @if (placedId) {
+    <p class="success">Đặt hàng #{{ placedId }} thành công! Đơn đang chờ nhân viên xác nhận.</p>
+  }
+  @if (loading) {
+    <app-loading />
+  } @else if (!orders.length) {
+    <p>Chưa có đơn hàng.</p>
+  } @else {
+    @for (o of orders; track o.id) {
+      <article class="order-card">
+        <div class="head">
+          <strong>#{{ o.id }}</strong>
+          <span>{{ o.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <p>Trạng thái: <span class="badge">{{ o.status }}</span> | TT: {{ o.paymentStatus }}</p>
+        <p>Tổng: {{ o.totalPrice | currency:'VND':'symbol':'1.0-0' }}</p>
+        <a [routerLink]="['/orders', o.id]">Chi tiết →</a>
+      </article>
+    }
+  }
+</div>

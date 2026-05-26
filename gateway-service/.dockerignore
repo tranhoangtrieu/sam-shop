@@ -1,0 +1,8 @@
+target/
+gateway-service/
+.mvn/
+mvnw
+mvnw.cmd
+.git
+.gitignore
+*.md

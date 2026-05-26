@@ -1,0 +1,61 @@
+<div class="page">
+  <div class="head">
+    <h1>Quản lý sản phẩm</h1>
+    <button type="button" (click)="openCreate()">+ Thêm sản phẩm</button>
+  </div>
+  @if (message) { <p class="msg">{{ message }}</p> }
+  @if (showForm) {
+    <form class="form" [formGroup]="form" (ngSubmit)="save()">
+      <input formControlName="name" placeholder="Tên" />
+      <input type="number" formControlName="price" placeholder="Giá" />
+      <input formControlName="description" placeholder="Mô tả" />
+      <input type="number" formControlName="quantity" placeholder="Số lượng" />
+      <div class="image-field">
+        <label class="file-label">
+          Chọn ảnh (tối đa 2MB)
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" (change)="onImageSelected($event)" />
+        </label>
+        @if (imagePreview) {
+          <div class="preview-wrap">
+            <img [src]="imagePreview" alt="Xem trước ảnh" class="preview" />
+            <button type="button" class="clear-img" (click)="clearImage()">Xóa ảnh</button>
+          </div>
+        }
+        @if (imageError) { <p class="img-error">{{ imageError }}</p> }
+      </div>
+      <button type="submit">Lưu</button>
+      <button type="button" class="cancel" (click)="showForm = false">Hủy</button>
+    </form>
+  }
+  @if (loading) {
+    <app-loading />
+  } @else if (products.length === 0) {
+    <p class="empty">Chưa có sản phẩm.</p>
+  } @else {
+    <div class="grid">
+      @for (p of products; track p.id) {
+        <article class="card">
+          <div class="img">
+            @if (getImage(p); as src) {
+              <img [src]="src" [alt]="p.name" loading="lazy" />
+            } @else {
+              <span class="placeholder">Chưa có ảnh</span>
+            }
+          </div>
+          <div class="body">
+            <p class="id">#{{ p.id }}</p>
+            <h3>{{ p.name }}</h3>
+            <p class="price">{{ p.price | currency:'VND':'symbol':'1.0-0' }}</p>
+            <p class="stock">Tồn: {{ p.quantity }}</p>
+            <div class="actions">
+              <button type="button" (click)="openEdit(p)">Sửa</button>
+              @if (isAdmin) {
+                <button type="button" class="danger" (click)="delete(p.id)">Xóa</button>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>

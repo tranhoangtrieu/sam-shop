@@ -1,0 +1,16 @@
+<div class="page">
+  <h1>Thanh toán & đặt hàng</h1>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>Địa chỉ giao hàng</label>
+    <textarea formControlName="shippingAddress" rows="3" placeholder="123 Đường ABC, Quận 1, TP.HCM"></textarea>
+    <label>Phương thức thanh toán</label>
+    <select formControlName="paymentMethod">
+      <option value="COD">Thanh toán khi nhận hàng (COD)</option>
+      <option value="ONLINE">Thanh toán trực tuyến (Online)</option>
+    </select>
+    @if (error) { <p class="error">{{ error }}</p> }
+    <button type="submit" [disabled]="loading || form.invalid">
+      {{ loading ? 'Đang xử lý...' : 'Xác nhận đặt hàng' }}
+    </button>
+  </form>
+</div>

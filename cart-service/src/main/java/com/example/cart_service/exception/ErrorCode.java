@@ -1,0 +1,26 @@
+package com.example.cart_service.exception;
+
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+@Getter
+public enum ErrorCode {
+    NOT_FOUND("Resource not found", HttpStatus.NOT_FOUND),
+    CART_NOT_FOUND("Cart not found", HttpStatus.NOT_FOUND),
+    CART_ITEM_NOT_FOUND("Cart item not found", HttpStatus.NOT_FOUND),
+    PRODUCT_NOT_FOUND("Product not found", HttpStatus.NOT_FOUND),
+    BAD_REQUEST("Bad request", HttpStatus.BAD_REQUEST),
+    INSUFFICIENT_STOCK("Insufficient stock", HttpStatus.BAD_REQUEST),
+    PRODUCT_UNAVAILABLE("Product is not available", HttpStatus.BAD_REQUEST),
+    UNAUTHORIZED("Unauthorized", HttpStatus.UNAUTHORIZED),
+    FORBIDDEN("Forbidden", HttpStatus.FORBIDDEN),
+    INTERNAL_ERROR("Internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
+
+    private final String message;
+    private final HttpStatus status;
+
+    ErrorCode(String message, HttpStatus status) {
+        this.message = message;
+        this.status = status;
+    }
+}

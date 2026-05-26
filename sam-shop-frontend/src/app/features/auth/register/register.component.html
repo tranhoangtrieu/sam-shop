@@ -1,0 +1,16 @@
+<div class="auth-card">
+  <h1>Đăng ký</h1>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>Tên đăng nhập</label>
+    <input formControlName="username" />
+    <label>Email</label>
+    <input type="email" formControlName="email" />
+    <label>Số điện thoại</label>
+    <input formControlName="phone" />
+    <label>Mật khẩu</label>
+    <input type="password" formControlName="password" />
+    @if (error) { <p class="error">{{ error }}</p> }
+    <button type="submit" [disabled]="loading || form.invalid">{{ loading ? 'Đang xử lý...' : 'Đăng ký' }}</button>
+  </form>
+  <p>Đã có tài khoản? <a routerLink="/login">Đăng nhập</a></p>
+</div>

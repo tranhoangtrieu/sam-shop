@@ -1,0 +1,21 @@
+<header class="header">
+  <a routerLink="/" class="logo">🍃 Sam Shop</a>
+  <nav>
+    <a routerLink="/products" routerLinkActive="active">Sản phẩm</a>
+    @if (user()) {
+      @if (user()!.role === 'USER') {
+        <a routerLink="/cart" routerLinkActive="active">Giỏ hàng</a>
+        <a routerLink="/orders" routerLinkActive="active">Đơn hàng</a>
+        <a routerLink="/chat" routerLinkActive="active">Hỗ trợ</a>
+      }
+      @if (isStaff()) {
+        <a routerLink="/admin" routerLinkActive="active">Quản trị</a>
+      }
+      <span class="user">Xin chào, {{ user()!.username }}</span>
+      <button type="button" class="btn-outline" (click)="logout()">Đăng xuất</button>
+    } @else {
+      <a routerLink="/login" routerLinkActive="active">Đăng nhập</a>
+      <a routerLink="/register" class="btn-primary">Đăng ký</a>
+    }
+  </nav>
+</header>

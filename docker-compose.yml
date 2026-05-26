@@ -1,0 +1,443 @@
+# Sam Shop — full stack (1 service = 1 container, 1 DB per business service)
+# Usage: docker compose up --build -d
+
+name: sam-shop
+
+x-postgres-env: &postgres-env
+  POSTGRES_USER: ${POSTGRES_USER:-postgres}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+
+x-postgres-health: &postgres-health
+  interval: 5s
+  timeout: 5s
+  retries: 10
+  start_period: 15s
+
+x-spring-db-env: &spring-db-env
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_OPEN_IN_VIEW: "false"
+
+x-eureka-client-env: &eureka-client-env
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+  EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+
+# JWT: iss must match token issuer (PUBLIC_HOST = VM public IP or DNS, port 8180)
+x-oauth-env: &oauth-env
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}/realms/sam-shop
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://identity-service:8080/realms/sam-shop/protocol/openid-connect/certs
+
+services:
+  # ─── PostgreSQL (1 container per database) ───────────────────────────────
+
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: sam-postgres-keycloak
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: keycloak
+    ports:
+      - "${POSTGRES_KEYCLOAK_PORT:-5433}:5432"
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d keycloak"]
+    networks:
+      - sam-shop-net
+
+  postgres-product:
+    image: postgres:16-alpine
+    container_name: sam-postgres-product
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: product_db
+    ports:
+      - "${POSTGRES_PRODUCT_PORT:-5434}:5432"
+    volumes:
+      - product_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d product_db"]
+    networks:
+      - sam-shop-net
+
+  postgres-cart:
+    image: postgres:16-alpine
+    container_name: sam-postgres-cart
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: cart_db
+    ports:
+      - "${POSTGRES_CART_PORT:-5435}:5432"
+    volumes:
+      - cart_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d cart_db"]
+    networks:
+      - sam-shop-net
+
+  postgres-order:
+    image: postgres:16-alpine
+    container_name: sam-postgres-order
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: order_db
+    ports:
+      - "${POSTGRES_ORDER_PORT:-5436}:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d order_db"]
+    networks:
+      - sam-shop-net
+
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: sam-postgres-payment
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: payment_db
+    ports:
+      - "${POSTGRES_PAYMENT_PORT:-5437}:5432"
+    volumes:
+      - payment_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d payment_db"]
+    networks:
+      - sam-shop-net
+
+  postgres-chat:
+    image: postgres:16-alpine
+    container_name: sam-postgres-chat
+    restart: unless-stopped
+    environment:
+      <<: *postgres-env
+      POSTGRES_DB: chat_db
+    ports:
+      - "${POSTGRES_CHAT_PORT:-5438}:5432"
+    volumes:
+      - chat_data:/var/lib/postgresql/data
+    healthcheck:
+      <<: *postgres-health
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d chat_db"]
+    networks:
+      - sam-shop-net
+
+  # ─── Infrastructure ──────────────────────────────────────────────────────
+
+  discovery-service:
+    build:
+      context: ./discovery-service
+      dockerfile: Dockerfile
+    image: sam-shop/discovery-service:latest
+    container_name: sam-discovery
+    restart: unless-stopped
+    environment:
+      SERVER_PORT: 8761
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${DISCOVERY_PORT:-8761}:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 90s
+    networks:
+      - sam-shop-net
+
+  identity-service:
+    build:
+      context: ./identity-service
+      dockerfile: Dockerfile
+    image: sam-shop/identity-service:26.6.2
+    container_name: sam-identity
+    restart: unless-stopped
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:-postgres}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      KC_HOSTNAME: ${PUBLIC_HOST:-${KC_HOSTNAME:-localhost}}
+      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8180}
+      KC_HOSTNAME_STRICT: ${KC_HOSTNAME_STRICT:-false}
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8080"
+    command: start --optimized
+    networks:
+      - sam-shop-net
+
+  # ─── Business microservices ──────────────────────────────────────────────
+
+  product-service:
+    build:
+      context: ./product-service
+      dockerfile: Dockerfile
+    image: sam-shop/product-service:latest
+    container_name: sam-product
+    restart: unless-stopped
+    depends_on:
+      postgres-product:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      <<: [*spring-db-env, *eureka-client-env, *oauth-env]
+      SERVER_PORT: 8081
+      SPRING_APPLICATION_NAME: product-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/product_db
+      APP_UPLOAD_DIR: /app/uploads
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    volumes:
+      - product_uploads:/app/uploads
+    ports:
+      - "${PRODUCT_PORT:-8081}:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  cart-service:
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    image: sam-shop/cart-service:latest
+    container_name: sam-cart
+    restart: unless-stopped
+    depends_on:
+      postgres-cart:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      <<: [*spring-db-env, *eureka-client-env, *oauth-env]
+      SERVER_PORT: 8082
+      SPRING_APPLICATION_NAME: cart-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-cart:5432/cart_db
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${CART_PORT:-8082}:8082"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    image: sam-shop/order-service:latest
+    container_name: sam-order
+    restart: unless-stopped
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      <<: [*spring-db-env, *eureka-client-env, *oauth-env]
+      SERVER_PORT: 8083
+      SPRING_APPLICATION_NAME: order-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/order_db
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${ORDER_PORT:-8083}:8083"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    image: sam-shop/payment-service:latest
+    container_name: sam-payment
+    restart: unless-stopped
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      <<: [*spring-db-env, *eureka-client-env, *oauth-env]
+      SERVER_PORT: 8084
+      SPRING_APPLICATION_NAME: payment-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment_db
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${PAYMENT_PORT:-8084}:8084"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8084/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    image: sam-shop/user-service:latest
+    container_name: sam-user
+    restart: unless-stopped
+    depends_on:
+      discovery-service:
+        condition: service_started
+      identity-service:
+        condition: service_started
+    environment:
+      <<: [*eureka-client-env, *oauth-env]
+      SERVER_PORT: 8086
+      SPRING_APPLICATION_NAME: user-service
+      KEYCLOAK_ADMIN_URL: http://identity-service:8080
+      KC_ADMIN_USERNAME: ${KC_ADMIN_USERNAME:-admin}
+      KC_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:-admin}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${USER_PORT:-8086}:8086"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8086/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  chat-service:
+    build:
+      context: ./chat-service
+      dockerfile: Dockerfile
+    image: sam-shop/chat-service:latest
+    container_name: sam-chat
+    restart: unless-stopped
+    depends_on:
+      postgres-chat:
+        condition: service_healthy
+      discovery-service:
+        condition: service_started
+    environment:
+      <<: [*spring-db-env, *eureka-client-env, *oauth-env]
+      SERVER_PORT: 8085
+      SPRING_APPLICATION_NAME: chat-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-chat:5432/chat_db
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${CHAT_PORT:-8085}:8085"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8085/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  gateway-service:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    image: sam-shop/gateway-service:latest
+    container_name: sam-gateway
+    restart: unless-stopped
+    depends_on:
+      discovery-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      identity-service:
+        condition: service_started
+    environment:
+      <<: [*eureka-client-env, *oauth-env]
+      SERVER_PORT: 8088
+      SPRING_APPLICATION_NAME: gateway-service
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info
+    ports:
+      - "${GATEWAY_PORT:-8088}:8088"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8088/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 120s
+    networks:
+      - sam-shop-net
+
+  frontend:
+    build:
+      context: ./sam-shop-frontend
+      dockerfile: Dockerfile
+      args:
+        KEYCLOAK_PUBLIC_URL: http://${PUBLIC_HOST:-localhost}:${KEYCLOAK_PORT:-8180}
+    image: sam-shop/frontend:latest
+    container_name: sam-frontend
+    restart: unless-stopped
+    depends_on:
+      gateway-service:
+        condition: service_started
+      identity-service:
+        condition: service_started
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    networks:
+      - sam-shop-net
+
+volumes:
+  keycloak_data:
+  product_uploads:
+  product_data:
+  cart_data:
+  order_data:
+  payment_data:
+  chat_data:
+
+networks:
+  sam-shop-net:
+    name: sam-shop-net
+    driver: bridge

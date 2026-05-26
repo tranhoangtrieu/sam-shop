@@ -1,0 +1,31 @@
+<div class="page">
+  <h1>Giỏ hàng</h1>
+  @if (loading) {
+    <app-loading />
+  } @else if (!cart?.items?.length) {
+    <p>Giỏ hàng trống. <a routerLink="/products">Mua sắm ngay</a></p>
+  } @else {
+    <table>
+      <thead>
+        <tr><th>Sản phẩm</th><th>Giá</th><th>SL</th><th>Tạm tính</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (item of cart!.items; track item.id) {
+          <tr>
+            <td>{{ item.productName }}</td>
+            <td>{{ item.price | currency:'VND':'symbol':'1.0-0' }}</td>
+            <td>
+              <button type="button" (click)="updateQty(item.id, item.quantity - 1)">-</button>
+              {{ item.quantity }}
+              <button type="button" (click)="updateQty(item.id, item.quantity + 1)">+</button>
+            </td>
+            <td>{{ item.subtotal | currency:'VND':'symbol':'1.0-0' }}</td>
+            <td><button type="button" class="danger" (click)="remove(item.id)">Xóa</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p class="total">Tổng: <strong>{{ cart!.totalPrice | currency:'VND':'symbol':'1.0-0' }}</strong></p>
+    <a routerLink="/checkout" class="btn-checkout">Thanh toán</a>
+  }
+</div>

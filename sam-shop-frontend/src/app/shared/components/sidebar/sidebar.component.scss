@@ -1,0 +1,16 @@
+.sidebar {
+  width: 220px;
+  background: #1b5e20;
+  color: #fff;
+  padding: 1.5rem 1rem;
+  min-height: calc(100vh - 64px);
+}
+.sidebar h3 { margin: 0 0 1rem; font-size: 1rem; opacity: 0.9; }
+.sidebar nav { display: flex; flex-direction: column; gap: 0.5rem; }
+.sidebar a {
+  color: #c8e6c9;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+.sidebar a.active, .sidebar a:hover { background: rgba(255,255,255,.15); color: #fff; }

@@ -1,0 +1,21 @@
+@if (loading) {
+  <app-loading />
+} @else if (product) {
+  <div class="detail">
+    <a routerLink="/products">← Quay lại</a>
+    @if (productImageSrc(product.image); as src) {
+      <div class="hero-img">
+        <img [src]="src" [alt]="product.name" />
+      </div>
+    }
+    <h1>{{ product.name }}</h1>
+    <p class="price">{{ product.price | currency:'VND':'symbol':'1.0-0' }}</p>
+    <p>{{ product.description }}</p>
+    <p>Tồn kho: {{ product.quantity }}</p>
+    @if (message) { <p class="msg">{{ message }}</p> }
+    <div class="actions">
+      <input type="number" [(ngModel)]="qty" min="1" [max]="product.quantity" />
+      <button type="button" (click)="addToCart()">Thêm vào giỏ</button>
+    </div>
+  </div>
+}

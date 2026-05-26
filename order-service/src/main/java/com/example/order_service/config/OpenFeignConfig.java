@@ -1,0 +1,21 @@
+package com.example.order_service.config;
+
+import feign.RequestInterceptor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
+@Configuration
+public class OpenFeignConfig {
+
+    @Bean
+    RequestInterceptor feignAuthInterceptor() {
+        return template -> {
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication instanceof JwtAuthenticationToken jwtAuth) {
+                template.header("Authorization", "Bearer " + jwtAuth.getToken().getTokenValue());
+            }
+        };
+    }
+}

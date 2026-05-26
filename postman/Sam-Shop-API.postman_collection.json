@@ -1,0 +1,492 @@
+{
+  "info": {
+    "_postman_id": "sam-shop-api-collection",
+    "name": "Sam Shop — All APIs",
+    "description": "Tập hợp API Sam Shop microservices.\n\n**Cách dùng:**\n1. Import file này vào Postman.\n2. Chạy request **Auth → Get Token (customer1)** (hoặc staff1/admin1).\n3. Token tự lưu vào biến `access_token` — các request còn lại dùng Bearer.\n\n**Base URL (qua Gateway):** `http://localhost:8088`\n**Keycloak:** `http://localhost:8180`\n\n**Tài khoản dev:**\n| Username | Password | Role | userId |\n|----------|----------|------|--------|\n| customer1 | 123456 | USER | 1 |\n| staff1 | 123456 | EMPLOYEE | 2 |\n| admin1 | 123456 | ADMIN | 3 |\n\n**Internal APIs** (service-to-service): gọi trực tiếp port service (8082–8084), không qua Gateway — Gateway yêu cầu JWT cho mọi `/api/**` trừ GET products.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "gatewayUrl", "value": "http://localhost:8088" },
+    { "key": "keycloakUrl", "value": "http://localhost:8180" },
+    { "key": "productServiceUrl", "value": "http://localhost:8081" },
+    { "key": "cartServiceUrl", "value": "http://localhost:8082" },
+    { "key": "orderServiceUrl", "value": "http://localhost:8083" },
+    { "key": "paymentServiceUrl", "value": "http://localhost:8084" },
+    { "key": "access_token", "value": "" },
+    { "key": "userId", "value": "1" },
+    { "key": "productId", "value": "1" },
+    { "key": "categoryId", "value": "1" },
+    { "key": "cartItemId", "value": "1" },
+    { "key": "orderId", "value": "1" },
+    { "key": "paymentId", "value": "1" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth (Keycloak)",
+      "item": [
+        {
+          "name": "Get Token — customer1 (USER)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  pm.collectionVariables.set('userId', '1');",
+                  "  console.log('Token saved. userId=1');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password" },
+                { "key": "client_id", "value": "sam-shop-ui" },
+                { "key": "username", "value": "customer1" },
+                { "key": "password", "value": "123456" }
+              ]
+            },
+            "url": "{{keycloakUrl}}/realms/sam-shop/protocol/openid-connect/token",
+            "description": "Lấy JWT cho khách hàng. Chạy request này trước khi test Cart / Order / Payment (USER)."
+          }
+        },
+        {
+          "name": "Get Token — staff1 (EMPLOYEE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  pm.collectionVariables.set('userId', '2');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password" },
+                { "key": "client_id", "value": "sam-shop-ui" },
+                { "key": "username", "value": "staff1" },
+                { "key": "password", "value": "123456" }
+              ]
+            },
+            "url": "{{keycloakUrl}}/realms/sam-shop/protocol/openid-connect/token"
+          }
+        },
+        {
+          "name": "Get Token — admin1 (ADMIN)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.collectionVariables.set('access_token', json.access_token);",
+                  "  pm.collectionVariables.set('userId', '3');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "grant_type", "value": "password" },
+                { "key": "client_id", "value": "sam-shop-ui" },
+                { "key": "username", "value": "admin1" },
+                { "key": "password", "value": "123456" }
+              ]
+            },
+            "url": "{{keycloakUrl}}/realms/sam-shop/protocol/openid-connect/token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product Service (Gateway)",
+      "item": [
+        {
+          "name": "GET — List products",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": {
+              "raw": "{{gatewayUrl}}/api/products?search=&categoryId=",
+              "host": ["{{gatewayUrl}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "search", "value": "", "description": "Tìm theo tên (optional)" },
+                { "key": "categoryId", "value": "", "description": "Lọc danh mục (optional)" }
+              ]
+            },
+            "description": "Public — không cần token."
+          }
+        },
+        {
+          "name": "GET — Product by ID",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/products/{{productId}}"
+          }
+        },
+        {
+          "name": "POST — Create product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Áo thun Sam Shop\",\n  \"price\": 199000,\n  \"description\": \"Mô tả sản phẩm\",\n  \"image\": \"https://example.com/image.jpg\",\n  \"quantity\": 100,\n  \"status\": \"ACTIVE\",\n  \"categoryId\": 1\n}"
+            },
+            "url": "{{gatewayUrl}}/api/products",
+            "description": "Role: EMPLOYEE hoặc ADMIN."
+          }
+        },
+        {
+          "name": "PUT — Update product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Áo thun Sam Shop (cập nhật)\",\n  \"price\": 179000,\n  \"description\": \"Mô tả mới\",\n  \"quantity\": 80,\n  \"status\": \"ACTIVE\",\n  \"categoryId\": 1\n}"
+            },
+            "url": "{{gatewayUrl}}/api/products/{{productId}}",
+            "description": "Role: EMPLOYEE hoặc ADMIN."
+          }
+        },
+        {
+          "name": "DELETE — Delete product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{gatewayUrl}}/api/products/{{productId}}",
+            "description": "Role: EMPLOYEE hoặc ADMIN."
+          }
+        },
+        {
+          "name": "PUT — Adjust stock",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": -5\n}"
+            },
+            "url": "{{gatewayUrl}}/api/products/{{productId}}/stock",
+            "description": "Public trên product-service (dùng khi tạo đơn trừ kho). delta âm = giảm, dương = tăng."
+          }
+        },
+        {
+          "name": "GET — List categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/products/categories"
+          }
+        },
+        {
+          "name": "POST — Create category",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Thời trang\",\n  \"description\": \"Danh mục thời trang\"\n}"
+            },
+            "url": "{{gatewayUrl}}/api/products/categories",
+            "description": "Role: EMPLOYEE hoặc ADMIN."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart Service (Gateway)",
+      "item": [
+        {
+          "name": "POST — Add to cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": {{productId}},\n  \"quantity\": 1\n}"
+            },
+            "url": "{{gatewayUrl}}/api/cart/add",
+            "description": "Role: USER. userId lấy từ JWT claim `userId`."
+          }
+        },
+        {
+          "name": "GET — Get cart by userId",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/cart/{{userId}}",
+            "description": "Chỉ được xem giỏ của chính mình (userId trong path = userId trong token)."
+          }
+        },
+        {
+          "name": "PUT — Update cart item quantity",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemId\": {{cartItemId}},\n  \"quantity\": 2\n}"
+            },
+            "url": "{{gatewayUrl}}/api/cart/update"
+          }
+        },
+        {
+          "name": "DELETE — Remove cart item",
+          "request": {
+            "method": "DELETE",
+            "url": "{{gatewayUrl}}/api/cart/remove/{{cartItemId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service (Gateway)",
+      "item": [
+        {
+          "name": "POST — Create order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": \"123 Nguyễn Huệ, Q1, TP.HCM\",\n  \"paymentMethod\": \"COD\"\n}"
+            },
+            "url": "{{gatewayUrl}}/api/orders",
+            "description": "Role: USER. paymentMethod: `COD` | `ONLINE`. Giỏ phải có sản phẩm."
+          }
+        },
+        {
+          "name": "POST — Create order (ONLINE)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": \"123 Nguyễn Huệ, Q1, TP.HCM\",\n  \"paymentMethod\": \"ONLINE\"\n}"
+            },
+            "url": "{{gatewayUrl}}/api/orders"
+          }
+        },
+        {
+          "name": "GET — My orders",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/orders",
+            "description": "Đơn hàng của user đang đăng nhập."
+          }
+        },
+        {
+          "name": "GET — Order by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "GET — All orders (staff)",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/orders/all",
+            "description": "Role: EMPLOYEE hoặc ADMIN. Dùng token staff1/admin1."
+          }
+        },
+        {
+          "name": "PUT — Confirm order",
+          "request": {
+            "method": "PUT",
+            "url": "{{gatewayUrl}}/api/orders/{{orderId}}/confirm",
+            "description": "Role: EMPLOYEE hoặc ADMIN. PENDING → CONFIRMED."
+          }
+        },
+        {
+          "name": "PUT — Update order status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPING\"\n}"
+            },
+            "url": "{{gatewayUrl}}/api/orders/{{orderId}}/status",
+            "description": "status: PENDING | CONFIRMED | SHIPPING | COMPLETED | CANCELLED"
+          }
+        },
+        {
+          "name": "GET — Revenue (admin)",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/orders/revenue",
+            "description": "Role: ADMIN only."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment Service (Gateway)",
+      "item": [
+        {
+          "name": "GET — Payment by orderId",
+          "request": {
+            "method": "GET",
+            "url": "{{gatewayUrl}}/api/payments/order/{{orderId}}"
+          }
+        },
+        {
+          "name": "PUT — Confirm COD payment",
+          "request": {
+            "method": "PUT",
+            "url": "{{gatewayUrl}}/api/payments/{{paymentId}}/confirm-cod",
+            "description": "Role: EMPLOYEE hoặc ADMIN. Xác nhận đã thu tiền COD."
+          }
+        },
+        {
+          "name": "POST — Initiate online payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": {{paymentId}}\n}"
+            },
+            "url": "{{gatewayUrl}}/api/payments/online/initiate",
+            "description": "Mock: trả paymentUrl để mô phỏng cổng thanh toán."
+          }
+        },
+        {
+          "name": "POST — Online payment callback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentId\": {{paymentId}},\n  \"success\": true\n}"
+            },
+            "url": "{{gatewayUrl}}/api/payments/online/callback",
+            "description": "Mock webhook: success true/false."
+          }
+        },
+        {
+          "name": "POST — Retry online payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}}\n}"
+            },
+            "url": "{{gatewayUrl}}/api/payments/online/retry",
+            "description": "Thử lại sau khi thanh toán Online FAILED."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Internal APIs (direct service — no Gateway JWT)",
+      "description": "Gọi thẳng từng service (port 8082–8084). Không cần Bearer token. Dùng khi debug hoặc mô phỏng gọi Feign giữa các service.",
+      "item": [
+        {
+          "name": "Cart — DELETE clear cart",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "DELETE",
+            "url": "{{cartServiceUrl}}/api/cart/internal/{{userId}}/clear",
+            "description": "Gọi sau khi tạo đơn thành công (order-service gọi qua Feign)."
+          }
+        },
+        {
+          "name": "Order — PUT update payment status",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentStatus\": \"PAID\"\n}"
+            },
+            "url": "{{orderServiceUrl}}/api/orders/internal/{{orderId}}/payment-status",
+            "description": "paymentStatus: UNPAID | PAID | FAILED | REFUNDED"
+          }
+        },
+        {
+          "name": "Payment — POST create payment",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": {{orderId}},\n  \"userId\": \"{{userId}}\",\n  \"amount\": 199000,\n  \"paymentMethod\": \"COD\"\n}"
+            },
+            "url": "{{paymentServiceUrl}}/api/payments/internal/create",
+            "description": "order-service tạo payment khi checkout."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health / Actuator",
+      "item": [
+        {
+          "name": "Gateway — health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{gatewayUrl}}/actuator/health"
+          }
+        },
+        {
+          "name": "Product — health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{productServiceUrl}}/actuator/health"
+          }
+        },
+        {
+          "name": "Eureka — home",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "http://localhost:8761"
+          }
+        }
+      ]
+    }
+  ]
+}

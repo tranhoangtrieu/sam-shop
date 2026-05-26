@@ -1,0 +1,30 @@
+<div class="page">
+  <h1>Nước sâm Sam Shop</h1>
+  <div class="toolbar">
+    <input [(ngModel)]="search" placeholder="Tìm kiếm sản phẩm..." (keyup.enter)="load()" />
+    <button type="button" (click)="load()">Tìm</button>
+  </div>
+  @if (message) { <p class="msg">{{ message }}</p> }
+  @if (loading) {
+    <app-loading />
+  } @else {
+    <div class="grid">
+      @for (p of products; track p.id) {
+        <article class="card">
+          <div class="img">
+            @if (productImageSrc(p.image); as src) {
+              <img [src]="src" [alt]="p.name" />
+            } @else {
+              <span class="placeholder">🌿</span>
+            }
+          </div>
+          <h3><a [routerLink]="['/products', p.id]">{{ p.name }}</a></h3>
+          <p class="desc">{{ p.description }}</p>
+          <p class="price">{{ p.price | currency:'VND':'symbol':'1.0-0' }}</p>
+          <p class="stock">Còn {{ p.quantity }} chai</p>
+          <button type="button" class="btn" (click)="addToCart(p)">Thêm giỏ</button>
+        </article>
+      }
+    </div>
+  }
+</div>

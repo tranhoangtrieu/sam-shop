@@ -1,0 +1,7 @@
+.page { background: #fff; padding: 1.5rem; border-radius: 12px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 0.5rem; border-bottom: 1px solid #eee; }
+.badge { background: #fff3e0; padding: 0.15rem 0.4rem; border-radius: 4px; }
+.actions { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+.actions button { background: #2e7d32; color: #fff; border: none; padding: 0.25rem 0.5rem; border-radius: 4px; cursor: pointer; }
+.msg { color: #2e7d32; margin-bottom: 0.5rem; }

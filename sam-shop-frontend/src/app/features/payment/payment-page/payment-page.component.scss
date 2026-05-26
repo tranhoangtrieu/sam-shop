@@ -1,0 +1,6 @@
+.page { max-width: 500px; background: #fff; padding: 2rem; border-radius: 12px; }
+form { display: flex; flex-direction: column; gap: 0.75rem; }
+label { font-weight: 600; }
+textarea, select { padding: 0.6rem; border: 1px solid #ddd; border-radius: 8px; }
+button { padding: 0.75rem; background: #2e7d32; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+.error { color: #c62828; }

@@ -1,0 +1,78 @@
+.page {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.hint {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.error {
+  color: #c62828;
+}
+
+.success {
+  color: #2e7d32;
+}
+
+.card {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button[type='submit'] {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.role {
+  font-weight: 600;
+  font-size: 0.85rem;
+}

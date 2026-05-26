@@ -1,0 +1,21 @@
+<div class="page">
+  <h1>Dashboard — Doanh thu</h1>
+  @if (loading) {
+    <app-loading />
+  } @else if (revenue) {
+    <div class="stats">
+      <div class="stat-card primary">
+        <span class="label">Tổng doanh thu</span>
+        <span class="value">{{ revenue.totalRevenue | currency:'VND':'symbol':'1.0-0' }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Đơn đã thanh toán</span>
+        <span class="value">{{ revenue.paidOrderCount }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="label">Đơn chưa thanh toán</span>
+        <span class="value">{{ revenue.pendingOrderCount }}</span>
+      </div>
+    </div>
+  }
+</div>

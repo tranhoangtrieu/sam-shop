@@ -1,0 +1,39 @@
+<div class="page">
+  <h1>Chat hỗ trợ khách hàng</h1>
+  @if (error) { <p class="error">{{ error }}</p> }
+  <div class="layout">
+    <aside class="inbox">
+      <h2>Hội thoại</h2>
+      @if (loading && !conversations.length) {
+        <app-loading />
+      } @else if (!conversations.length) {
+        <p class="empty">Chưa có hội thoại</p>
+      } @else {
+        @for (c of conversations; track c.id) {
+          <button type="button" class="item" [class.active]="c.id === selectedId" (click)="selectConversation(c)">
+            <strong>{{ c.customerUsername }}</strong>
+            <span class="preview">{{ c.lastMessagePreview || '—' }}</span>
+          </button>
+        }
+      }
+    </aside>
+    <section class="thread">
+      @if (!selectedId) {
+        <p class="empty">Chọn hội thoại để trả lời</p>
+      } @else {
+        <div class="messages">
+          @for (m of messages; track m.id) {
+            <div class="msg" [class.staff]="m.senderRole !== 'USER'">
+              <span class="meta">{{ m.senderUsername }} ({{ m.senderRole }}) · {{ m.sentAt | date:'short' }}</span>
+              <p>{{ m.content }}</p>
+            </div>
+          }
+        </div>
+        <form class="composer" (ngSubmit)="send()">
+          <input [(ngModel)]="draft" name="draft" placeholder="Trả lời khách hàng..." autocomplete="off" />
+          <button type="submit">Gửi</button>
+        </form>
+      }
+    </section>
+  </div>
+</div>

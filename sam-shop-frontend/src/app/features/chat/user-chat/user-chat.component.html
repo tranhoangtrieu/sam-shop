@@ -1,0 +1,23 @@
+<div class="page">
+  <h1>Hỗ trợ trực tuyến</h1>
+  <p class="hint">Chat với nhân viên / quản trị Sam Shop</p>
+  @if (error) { <p class="error">{{ error }}</p> }
+  @if (loading) {
+    <app-loading />
+  } @else {
+    <div class="chat-box">
+      <div class="messages">
+        @for (m of messages; track m.id) {
+          <div class="msg" [class.mine]="m.senderRole === 'USER'">
+            <span class="meta">{{ m.senderUsername }} · {{ m.sentAt | date:'short' }}</span>
+            <p>{{ m.content }}</p>
+          </div>
+        }
+      </div>
+      <form class="composer" (ngSubmit)="send()">
+        <input [(ngModel)]="draft" name="draft" placeholder="Nhập tin nhắn..." autocomplete="off" />
+        <button type="submit">Gửi</button>
+      </form>
+    </div>
+  }
+</div>

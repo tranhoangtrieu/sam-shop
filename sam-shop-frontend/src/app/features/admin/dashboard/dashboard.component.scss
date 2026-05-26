@@ -1,0 +1,8 @@
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.stat-card {
+  background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.stat-card.primary { background: linear-gradient(135deg, #2e7d32, #43a047); color: #fff; }
+.label { font-size: 0.875rem; opacity: 0.9; }
+.value { font-size: 1.5rem; font-weight: 700; }

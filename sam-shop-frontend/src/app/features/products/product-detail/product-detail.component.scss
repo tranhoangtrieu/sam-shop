@@ -1,0 +1,15 @@
+.detail { background: #fff; padding: 2rem; border-radius: 12px; }
+.hero-img {
+  max-width: 420px;
+  margin: 1rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f0f4f0;
+}
+.hero-img img { width: 100%; display: block; object-fit: cover; }
+.detail a { color: #2e7d32; }
+.price { font-size: 1.5rem; font-weight: 700; color: #2e7d32; }
+.msg { color: #2e7d32; background: #e8f5e9; padding: 0.5rem; border-radius: 8px; }
+.actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.actions input { width: 80px; padding: 0.5rem; }
+.actions button { padding: 0.5rem 1rem; background: #2e7d32; color: #fff; border: none; border-radius: 8px; cursor: pointer; }

@@ -1,0 +1,22 @@
+@if (loading) {
+  <app-loading />
+} @else if (order) {
+  <div class="page">
+    <a routerLink="/orders">← Danh sách đơn</a>
+    <h1>Đơn hàng #{{ order.id }}</h1>
+    <p>Ngày: {{ order.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+    <p>Địa chỉ: {{ order.shippingAddress }}</p>
+    <p>Trạng thái: {{ order.status }} | Thanh toán: {{ order.paymentStatus }}</p>
+    <table>
+      <tr><th>Sản phẩm</th><th>SL</th><th>Giá</th></tr>
+      @for (item of order.items; track item.id) {
+        <tr>
+          <td>{{ item.productName }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ item.price | currency:'VND':'symbol':'1.0-0' }}</td>
+        </tr>
+      }
+    </table>
+    <p class="total">Tổng: {{ order.totalPrice | currency:'VND':'symbol':'1.0-0' }}</p>
+  </div>
+}

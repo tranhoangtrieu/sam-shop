@@ -1,0 +1,37 @@
+<div class="page">
+  <h1>Quản lý đơn hàng</h1>
+  @if (message) { <p class="msg">{{ message }}</p> }
+  @if (loading) {
+    <app-loading />
+  } @else {
+    <table>
+      <tr>
+        <th>ID</th><th>User</th><th>Tổng</th><th>TT đơn</th><th>TT thanh toán</th><th>Ngày</th><th>Thao tác</th>
+      </tr>
+      @for (o of orders; track o.id) {
+        <tr>
+          <td>{{ o.id }}</td>
+          <td>{{ o.userId }}</td>
+          <td>{{ o.totalPrice | currency:'VND':'symbol':'1.0-0' }}</td>
+          <td><span class="badge">{{ o.status }}</span></td>
+          <td>{{ o.paymentStatus }}</td>
+          <td>{{ o.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+          <td class="actions">
+            @if (o.status === 'PENDING') {
+              <button type="button" (click)="confirm(o.id)">Xác nhận đơn</button>
+            }
+            @if (o.status === 'COMPLETED' && o.paymentStatus === 'UNPAID') {
+              <button type="button" (click)="confirmCodPayment(o.id)">Đã thu COD</button>
+            }
+            <select (change)="updateStatus(o.id, $any($event.target).value)">
+              <option value="">Cập nhật TT</option>
+              @for (s of statuses; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </td>
+        </tr>
+      }
+    </table>
+  }
+</div>
